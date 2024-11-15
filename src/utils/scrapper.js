@@ -1,3 +1,4 @@
+require('dotenv').config()
 const puppeteer = require('puppeteer')
 const fs = require('fs')
 
@@ -30,10 +31,10 @@ const logInEDF = async (page, browser) => {
 }
 const populateLogin = async (page) => {
   console.log('Populating Login')
-  await page.locator('input[name="email"]').fill('example@example.com')
+  await page.locator('input[name="email"]').fill(process.env.email)
   await page
     .locator('input[id="Password"]')
-    .fill('ThePassword' + String.fromCharCode(13))
+    .fill(process.env.password + String.fromCharCode(13))
   // await page.locator('input[type="checkbox" name="rememberMe"]').click()
 }
 
