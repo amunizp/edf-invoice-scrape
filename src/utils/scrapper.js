@@ -4,6 +4,7 @@ const fs = require('fs')
 
 let listOfAccounts = []
 let accountCount = 0
+let listOfPDFs = []
 
 const Scrapper = async (url) => {
   try {
@@ -35,7 +36,7 @@ const getAccounts = async (page, browser, url) => {
       .locator('aria/Next page[role="button"]')
       .map((button) => !button.disabled)
       .wait()
-    console.log('enabled?', enabled)
+    console.log('Next page enabled?', enabled)
     if (enabled) {
       await page.locator('aria/Next page[role="button"]').click()
       getAccounts(page, browser, url)
@@ -44,22 +45,16 @@ const getAccounts = async (page, browser, url) => {
         // const accountPage = await browser.newPage()
         await page.goto(`${url}accounts/${account}/bills-and-payments`)
         await page.locator('button.sc-dDLSgt.hqpRUI').click()
-
-        let $parentDiv = await page.locator('div.sc-fcPuYG.hnnTnc').waitHandle()
-
-        // let element = await $parentDiv
-        //   .$('div.sc-fcPuYG.hnnTnc div.sc-ciFVpn.bXebdJ:first-child a')
-        //   .click()
         const linkToPDF = await page
-          .locator('a[id="16115907"]')
-          .map((a) => !a.href)
+          .locator('div.sc-fcPuYG.hnnTnc div.sc-ciFVpn.bXebdJ:first-child a')
+          .map((el) => el.href)
           .wait()
-        // let $childsDiv = await $parentDiv.$$(':scope > *')
-        // await $childsDiv.$('a').click()
-        console.log(`Page open! ${account} invoice ${linkToPDF}`) //  ${$childsDiv}`)
-        break
+        // console.log(`Page open! ${account} first invoice ${linkToPDF}`) //  ${$childsDiv}`)
+        listOfPDFs.push(linkToPDF)
       }
     }
+    console.log(listOfPDFs)
+    fetchPDFs(listOfPDFs)
   } catch (error) {
     console.log(
       'finished all pages and got an error for not finding the next one',
@@ -67,7 +62,14 @@ const getAccounts = async (page, browser, url) => {
     )
   }
 }
-
+const fetchPDFs = async (listOfPDFs) => {
+  for (const url of listOfPDFs) {
+    const pdfResponse = await fetch(url)
+    const pdfBuffer = await pdfResponse.arrayBuffer()
+    const binaryPdf = Buffer.from(pdfBuffer)
+    fs.writeFileSync('../../Data/a.pdf', binaryPdf, 'binary')
+  }
+}
 const logInEDF = async (page, browser) => {
   ignoreCookies(page)
     .then((result) => {
