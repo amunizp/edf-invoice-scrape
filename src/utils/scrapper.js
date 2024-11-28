@@ -2,8 +2,8 @@ require('dotenv').config()
 const puppeteer = require('puppeteer')
 const fs = require('fs')
 
-const componentArray = []
-let pageCount = 1
+let listOfAccounts = []
+let accountCount = 0
 
 const Scrapper = async (url) => {
   try {
@@ -16,14 +16,63 @@ const Scrapper = async (url) => {
     await page.goto(url)
     console.log('Page open!')
     logInEDF(page, browser)
+    getAccounts(page, browser, url)
   } catch (error) {
     console.error(error)
   }
 }
+
+const getAccounts = async (page, browser, url) => {
+  await page.locator('tr').wait()
+  console.log('List of accounts page loaded', url)
+  let currentAccounts = await page.$$eval('td > p.sc-eauhAA.efjsHa', (texts) =>
+    texts.map((e) => e.textContent)
+  )
+  currentAccounts = currentAccounts.filter((item) => item !== 'ACTIVE')
+  listOfAccounts = listOfAccounts.concat(currentAccounts)
+  try {
+    const enabled = await page
+      .locator('aria/Next page[role="button"]')
+      .map((button) => !button.disabled)
+      .wait()
+    console.log('enabled?', enabled)
+    if (enabled) {
+      await page.locator('aria/Next page[role="button"]').click()
+      getAccounts(page, browser, url)
+    } else {
+      for (const account of listOfAccounts) {
+        // const accountPage = await browser.newPage()
+        await page.goto(`${url}accounts/${account}/bills-and-payments`)
+        await page.locator('button.sc-dDLSgt.hqpRUI').click()
+
+        let $parentDiv = await page.locator('div.sc-fcPuYG.hnnTnc').waitHandle()
+
+        // let element = await $parentDiv
+        //   .$('div.sc-fcPuYG.hnnTnc div.sc-ciFVpn.bXebdJ:first-child a')
+        //   .click()
+        const linkToPDF = await page
+          .locator('a[id="16115907"]')
+          .map((a) => !a.href)
+          .wait()
+        // let $childsDiv = await $parentDiv.$$(':scope > *')
+        // await $childsDiv.$('a').click()
+        console.log(`Page open! ${account} invoice ${linkToPDF}`) //  ${$childsDiv}`)
+        break
+      }
+    }
+  } catch (error) {
+    console.log(
+      'finished all pages and got an error for not finding the next one',
+      error
+    )
+  }
+}
+
 const logInEDF = async (page, browser) => {
   ignoreCookies(page)
     .then((result) => {
       populateLogin(page)
+      console.log('You are logged in!')
     })
     .catch((err) => {
       console.log('Tried to fill in logs but failed ', error)
