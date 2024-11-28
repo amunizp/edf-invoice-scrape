@@ -18,6 +18,8 @@ const Scrapper = async (url) => {
     console.log('Page open!')
     logInEDF(page, browser)
     getAccounts(page, browser, url)
+
+    // await browser.close()
   } catch (error) {
     console.error(error)
   }
@@ -54,21 +56,28 @@ const getAccounts = async (page, browser, url) => {
       }
     }
     console.log(listOfPDFs)
-    fetchPDFs(listOfPDFs)
   } catch (error) {
     console.log(
       'finished all pages and got an error for not finding the next one',
       error
     )
   }
+  fetchPDFs(listOfPDFs)
 }
-const fetchPDFs = async (listOfPDFs) => {
-  for (const url of listOfPDFs) {
+const fetchPDFs = async () => {
+  // listOfPDFs.forEach((url, index) => {
+  console.log(
+    `number of accounts ${listOfAccounts.length}  number of invoices ${listOfPDFs.length}`
+  )
+  for (const [index, url] of listOfPDFs.entries()) {
     const pdfResponse = await fetch(url)
     const pdfBuffer = await pdfResponse.arrayBuffer()
     const binaryPdf = Buffer.from(pdfBuffer)
-    fs.writeFileSync('../../Data/a.pdf', binaryPdf, 'binary')
+    fs.writeFileSync(`${listOfAccounts[index]}.pdf`, binaryPdf, 'binary')
   }
+  // for (const url of listOfPDFs) {
+
+  // }
 }
 const logInEDF = async (page, browser) => {
   ignoreCookies(page)
