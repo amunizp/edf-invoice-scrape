@@ -46,12 +46,14 @@ const getAccounts = async (page, browser, url) => {
       for (const account of listOfAccounts) {
         // const accountPage = await browser.newPage()
         await page.goto(`${url}accounts/${account}/bills-and-payments`)
-        await page.locator('button.sc-dDLSgt.hqpRUI').click()
+        await page.locator('button.sc-ciFVpn.bdCjIk').wait()
+        // click invoices button
+        await page.locator('button.sc-ciFVpn.bdCjIk').click()
+        //get the first document that can be downloaded form the list.
         const linkToPDF = await page
-          .locator('div.sc-fcPuYG.hnnTnc div.sc-ciFVpn.bXebdJ:first-child a')
+          .locator('a.sc-fAUdSK.iZGISN')
           .map((el) => el.href)
           .wait()
-        // console.log(`Page open! ${account} first invoice ${linkToPDF}`) //  ${$childsDiv}`)
         listOfPDFs.push(linkToPDF)
       }
     }
